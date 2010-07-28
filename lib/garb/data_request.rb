@@ -17,6 +17,10 @@ module Garb
       URI.parse(@base_url)
     end
 
+    def get_proxy
+      URI.parse(opts.fetch(:proxy)) rescue nil
+    end
+
     def send_request
       response = if @session.single_user?
         single_user_request
@@ -29,7 +33,13 @@ module Garb
     end
 
     def single_user_request
-      http = Net::HTTP.new(uri.host, uri.port)
+      proxy = get_proxy
+      if proxy
+        http = Net::HTTP::Proxy(proxy.host, proxy.port, proxy.user, proxy.pass).new(uri.host, uri.port)
+      else
+        http = Net::HTTP.new(uri.host, uri.port)
+      end
+
       http.use_ssl = true
       http.verify_mode = OpenSSL::SSL::VERIFY_NONE
       http.get("#{uri.path}#{query_string}", {'Authorization' => "GoogleLogin auth=#{@session.auth_token}", 'GData-Version' => '2'})

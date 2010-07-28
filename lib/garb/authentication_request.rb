@@ -24,8 +24,18 @@ module Garb
       URI.parse(URL)
     end
 
+    def get_proxy
+      URI.parse(opts.fetch(:proxy)) rescue nil
+    end
+
     def send_request(ssl_mode)
-      http = Net::HTTP.new(uri.host, uri.port)
+      proxy = get_proxy
+      if proxy
+        http = Net::HTTP::Proxy(proxy.host, proxy.port, proxy.user, proxy.pass).new(uri.host, uri.port)
+      else
+        http = Net::HTTP.new(uri.host, uri.port)
+      end
+      
       http.use_ssl = true
       http.verify_mode = ssl_mode
 
